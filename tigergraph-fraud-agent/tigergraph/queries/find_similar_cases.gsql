@@ -1,0 +1,31 @@
+USE GRAPH FraudGraph
+
+CREATE QUERY find_similar_cases(STRING input_txn_id) FOR GRAPH FraudGraph {
+  /*
+   * Starts from a specific transaction and explores outward 1-2 hops
+   * (via Device, Email, or Region) to find historically similar ClosedCases.
+   * Ranks the similar cases by the number of shared attributes.
+   */
+  
+  SumAccum<INT> @similarity_score;
+  
+  Start = {Transaction.*};
+  TargetTxn = SELECT s FROM Start:s WHERE s.txn_id == input_txn_id;
+  
+  // Hop 1: Get the shared attributes (Device, Email, Region)
+  Attributes = SELECT t FROM TargetTxn:s -(_)- (DeviceProfile | EmailDomain | BillingRegion):t;
+  
+  // Hop 2: Get other transactions sharing these attributes
+  RelatedTxns = SELECT t FROM Attributes:s -(_)- Transaction:t
+                WHERE t.txn_id != input_txn_id;
+                
+  // Hop 3: Find cases attached to these related transactions
+  SimilarCases = SELECT c FROM RelatedTxns:t -(CASE_INVOLVES_TXN_REVERSE:e)- ClosedCase:c
+                 ACCUM c.@similarity_score += 1
+                 ORDER BY c.@similarity_score DESC
+                 LIMIT 5;
+                 
+  PRINT SimilarCases;
+}
+
+INSTALL QUERY find_similar_cases

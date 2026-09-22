@@ -1,0 +1,35 @@
+CREATE GRAPH FraudGraph ()
+
+// Vertices
+CREATE VERTEX Customer (PRIMARY_ID customer_id STRING) WITH primary_id_as_attribute="true"
+CREATE VERTEX Card (PRIMARY_ID card_id STRING, network STRING, card_type STRING) WITH primary_id_as_attribute="true"
+CREATE VERTEX Transaction (
+    PRIMARY_ID txn_id STRING, 
+    amount DOUBLE, 
+    ts DATETIME, 
+    channel STRING, 
+    risk_score DOUBLE, 
+    product STRING
+) WITH primary_id_as_attribute="true"
+CREATE VERTEX DeviceProfile (PRIMARY_ID device_id STRING) WITH primary_id_as_attribute="true"
+CREATE VERTEX EmailDomain (PRIMARY_ID email_domain STRING) WITH primary_id_as_attribute="true"
+CREATE VERTEX BillingRegion (PRIMARY_ID region_id STRING) WITH primary_id_as_attribute="true"
+CREATE VERTEX ClosedCase (
+    PRIMARY_ID case_id STRING, 
+    outcome STRING, 
+    pattern STRING, 
+    analyst_notes STRING
+) WITH primary_id_as_attribute="true"
+
+// Edges
+CREATE DIRECTED EDGE OWNS (FROM Customer, TO Card)
+CREATE DIRECTED EDGE MADE_TXN (FROM Card, TO Transaction)
+CREATE DIRECTED EDGE FROM_DEVICE (FROM Transaction, TO DeviceProfile)
+CREATE DIRECTED EDGE BILLED_IN (FROM Transaction, TO BillingRegion)
+CREATE DIRECTED EDGE USED_EMAIL (FROM Transaction, TO EmailDomain)
+CREATE DIRECTED EDGE NEXT_TXN (FROM Transaction, TO Transaction) // Time-ordered
+CREATE DIRECTED EDGE CASE_INVOLVES_TXN (FROM ClosedCase, TO Transaction)
+CREATE DIRECTED EDGE CASE_ON_CARD (FROM ClosedCase, TO Card)
+
+// Install the graph
+USE GRAPH FraudGraph

@@ -1,0 +1,24 @@
+USE GRAPH FraudGraph
+
+CREATE QUERY get_txn_history(STRING input_card_id, INT limit_txns = 50) FOR GRAPH FraudGraph {
+  /*
+   * Retrieves the transaction history for a specific card, ordered by timestamp.
+   * Useful for identifying Card Testing (Pattern 1) and velocity anomalies.
+   */
+  
+  ListAccum<EDGE> @@txn_edges;
+  
+  Start = {Card.*};
+  
+  // Find the specific card
+  TargetCard = SELECT s FROM Start:s WHERE s.card_id == input_card_id;
+  
+  // Traverse to all its transactions
+  Transactions = SELECT t FROM TargetCard:s -(MADE_TXN:e)- Transaction:t
+                 ORDER BY t.ts DESC
+                 LIMIT limit_txns;
+                 
+  PRINT Transactions;
+}
+
+INSTALL QUERY get_txn_history

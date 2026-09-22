@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=development
+      - TIGERGRAPH_HOST=${TIGERGRAPH_HOST}
+      - TIGERGRAPH_USERNAME=${TIGERGRAPH_USERNAME}
+      - TIGERGRAPH_PASSWORD=${TIGERGRAPH_PASSWORD}
+      - TIGERGRAPH_GRAPH_NAME=${TIGERGRAPH_GRAPH_NAME}
+      - LLM_PROVIDER=${LLM_PROVIDER:-gemini}
+      - LLM_API_KEY=${LLM_API_KEY}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - frontend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  # TigerGraph Community Edition (Optional local fallback, or use Savanna)
+  tigergraph:
+    image: tigergraph/tigergraph:latest
+    ports:
+      - "9000:9000" # RESTPP
+      - "14240:14240" # GraphStudio
+    volumes:
+      - ./tigergraph_data:/home/tigergraph/mydata
+    environment:
+      - TZ=UTC
+    # If running locally, uncomment the above. For Savanna, this service can be ignored.

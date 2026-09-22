@@ -1,0 +1,11 @@
+fastapi>=0.104.1
+uvicorn>=0.23.2
+pydantic>=2.4.2
+pydantic-settings>=2.0.3
+langgraph>=0.0.15
+langchain>=0.0.330
+langchain-core>=0.0.13
+requests>=2.31.0
+python-dotenv>=1.0.0
+pytest>=7.4.3
+httpx>=0.25.1

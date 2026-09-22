@@ -1,0 +1,31 @@
+USE GRAPH FraudGraph
+
+CREATE QUERY get_region_neighbors(STRING input_region_id) FOR GRAPH FraudGraph {
+  /*
+   * Traverses from a specific billing region to find all transactions made there,
+   * then to the associated cards, and finally checks if any of those cards 
+   * are linked to a ClosedCase.
+   * Useful for identifying Region-based fraud rings.
+   */
+  
+  SumAccum<INT> @txn_count;
+  
+  Start = {BillingRegion.*};
+  TargetRegion = SELECT s FROM Start:s WHERE s.region_id == input_region_id;
+  
+  // Get all transactions billed in this region
+  Txns = SELECT t FROM TargetRegion:s -(BILLED_IN_REVERSE:e)- Transaction:t;
+  
+  // Get cards used in these transactions
+  Cards = SELECT c FROM Txns:t -(MADE_TXN_REVERSE:e)- Card:c
+          ACCUM c.@txn_count += 1;
+          
+  // Find cases attached to these cards
+  Cases = SELECT ca FROM Cards:c -(CASE_ON_CARD_REVERSE:e)- ClosedCase:ca
+          WHERE ca.outcome == "confirmed_fraud";
+          
+  PRINT Cards;
+  PRINT Cases;
+}
+
+INSTALL QUERY get_region_neighbors
