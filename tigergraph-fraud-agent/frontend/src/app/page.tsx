@@ -1,7 +1,67 @@
-import React from 'react';
-import { Activity, ShieldAlert, Cpu, Share2, Search, ArrowUpRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
+"use client";
+
+import React, { useEffect, useState } from 'react';
+import { Activity, ShieldAlert, Cpu, Share2, Search, ArrowUpRight, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
 
 export default function Dashboard() {
+  const [cases, setCases] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeCase, setActiveCase] = useState<any>(null);
+
+  const fetchCases = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/cases");
+      if (res.ok) {
+        const data = await res.json();
+        setCases(data.cases);
+      }
+    } catch (e) {
+      console.error("Failed to fetch cases", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCases();
+    // Poll every 5 seconds for dashboard freshness
+    const interval = setInterval(fetchCases, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const simulateNewCase = async () => {
+    try {
+      // 1. Create case
+      const createRes = await fetch("http://localhost:8000/api/cases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trigger_type: "api_request",
+          customer_id: "C" + Math.floor(Math.random() * 10000),
+          transaction_id: "TXN" + Math.floor(Math.random() * 100000),
+          initial_risk: 0.85 + (Math.random() * 0.15) // High risk
+        })
+      });
+      if (!createRes.ok) {
+        throw new Error(`Failed to create case: ${await createRes.text()}`);
+      }
+      const createData = await createRes.json();
+      const caseId = createData.case.case_id;
+
+      await fetchCases(); // Refresh to show OPEN state
+
+      // 2. Trigger Investigation
+      await fetch(`http://localhost:8000/api/cases/${caseId}/investigate`, {
+        method: "POST"
+      });
+
+      await fetchCases(); // Refresh to show completed state
+
+    } catch (e) {
+      console.error("Simulation failed", e);
+    }
+  };
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       
@@ -14,6 +74,12 @@ export default function Dashboard() {
           <p className="text-slate-400 mt-2 font-medium">Real-time graph-driven investigations & NBA Engine.</p>
         </div>
         <div className="flex gap-4">
+          <button 
+            onClick={simulateNewCase}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 transition text-white font-semibold rounded-lg shadow-lg flex items-center gap-2"
+          >
+            <Activity size={18} /> Trigger Signal
+          </button>
           <div className="glass-panel px-4 py-2 rounded-lg flex items-center gap-2">
             <Search size={18} className="text-slate-400" />
             <input 
@@ -29,15 +95,15 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         <MetricCard 
           title="Active Investigations" 
-          value="24" 
-          trend="+3" 
+          value={cases.filter(c => c.status === 'OPEN').length.toString()} 
+          trend="Live" 
           icon={<Activity className="text-blue-400" />} 
           accent="blue" 
         />
         <MetricCard 
-          title="Agent Resolved (24h)" 
-          value="182" 
-          trend="+12%" 
+          title="Agent Resolved" 
+          value={cases.filter(c => c.status !== 'OPEN').length.toString()} 
+          trend="Session" 
           icon={<Cpu className="text-indigo-400" />} 
           accent="indigo" 
         />
@@ -50,8 +116,8 @@ export default function Dashboard() {
         />
         <MetricCard 
           title="High Risk Alerts" 
-          value="7" 
-          trend="-2" 
+          value={cases.filter(c => c.risk_score > 0.8).length.toString()} 
+          trend="Tracked" 
           icon={<ShieldAlert className="text-rose-400" />} 
           accent="rose" 
         />
@@ -67,8 +133,11 @@ export default function Dashboard() {
               <AlertTriangle size={18} className="text-amber-400" />
               Agent Case Queue
             </h2>
-            <button className="text-sm font-medium text-blue-400 hover:text-blue-300 transition flex items-center gap-1">
-              View All <ArrowUpRight size={16} />
+            <button 
+              onClick={fetchCases}
+              className="text-sm font-medium text-slate-400 hover:text-white transition flex items-center gap-1"
+            >
+              <RefreshCw size={16} /> Refresh
             </button>
           </div>
           
@@ -84,32 +153,27 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/50">
-                <CaseRow 
-                  id="HHG-017" 
-                  entity="C06403-K2" 
-                  trigger="Graph Anomaly (Device)" 
-                  score={0.92} 
-                  state="AWAITING_APPROVAL" 
-                  action="BLOCK_CARD" 
-                  active={true}
-                />
-                <CaseRow 
-                  id="HHG-018" 
-                  entity="C13440-K2" 
-                  trigger="Out-of-Region Use" 
-                  score={0.71} 
-                  state="COLLECTING_EVIDENCE" 
-                  action="STEP_UP_AUTH" 
-                />
-                <CaseRow 
-                  id="HHG-019" 
-                  entity="C05876-K2" 
-                  trigger="Model Score Spike" 
-                  score={0.88} 
-                  state="RESOLVED" 
-                  action="ALLOW" 
-                  resolved={true}
-                />
+                {cases.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-slate-500">
+                      No active cases. Click "Trigger Signal" to simulate a fraud alert.
+                    </td>
+                  </tr>
+                )}
+                {cases.slice().reverse().map(c => (
+                  <CaseRow 
+                    key={c.case_id}
+                    id={c.case_id} 
+                    entity={c.customer_id} 
+                    trigger={`TXN ${c.transaction_id}`} 
+                    score={c.risk_score} 
+                    state={c.status} 
+                    action={c.recommended_action || "ANALYZING..."} 
+                    active={activeCase?.case_id === c.case_id}
+                    resolved={c.status === 'CLOSED'}
+                    onClick={() => setActiveCase(c)}
+                  />
+                ))}
               </tbody>
             </table>
           </div>
@@ -122,43 +186,57 @@ export default function Dashboard() {
               <Cpu size={18} className="text-blue-400" />
               Live Agent Trace
             </h2>
-            <p className="text-xs text-slate-400 mt-1">Tracing execution for HHG-017</p>
+            <p className="text-xs text-slate-400 mt-1">
+              {activeCase ? `Tracing execution for ${activeCase.case_id}` : "Select a case to view agent traces"}
+            </p>
           </div>
           
-          <div className="p-6 space-y-6 flex-1 overflow-y-auto">
-            <TraceStep 
-              title="Alert Received" 
-              time="10:42:01 AM"
-              desc="Model flagged txn 3000332 with score 0.92."
-              status="done"
-            />
-            <TraceStep 
-              title="Graph Tool: get_device_neighbors" 
-              time="10:42:02 AM"
-              desc="Found 1 connected card (C06403-K1) linked to prior confirmed fraud CC-0002."
-              status="done"
-              isCode
-            />
-            <TraceStep 
-              title="GraphRAG: Policy Lookup" 
-              time="10:42:03 AM"
-              desc="Retrieved Policy R6 (Shared Origin Fraud). Recommendation: BLOCK_CARD."
-              status="done"
-            />
-            <TraceStep 
-              title="Awaiting Approval" 
-              time="10:42:04 AM"
-              desc="Generated NBA: Block Card C06403-K2. Requires L1 Approval."
-              status="active"
-              pulse
-            />
-          </div>
+          {activeCase ? (
+            <div className="p-6 space-y-6 flex-1 overflow-y-auto">
+              <TraceStep 
+                title="Alert Received" 
+                time="T+0.0s"
+                desc={`Model flagged TXN ${activeCase.transaction_id} for Customer ${activeCase.customer_id} with initial score ${activeCase.risk_score.toFixed(2)}.`}
+                status="done"
+              />
+              {activeCase.status !== 'OPEN' && (
+                <>
+                  <TraceStep 
+                    title="Graph Tool: execute_gsql" 
+                    time="T+1.2s"
+                    desc="Agent traversed connected devices, IPs, and historical transactions."
+                    status="done"
+                    isCode
+                  />
+                  <TraceStep 
+                    title="GraphRAG: Policy Lookup" 
+                    time="T+2.4s"
+                    desc={`Retrieved policy mappings. Agent assessed Confidence: ${activeCase.confidence_level}`}
+                    status="done"
+                  />
+                  <TraceStep 
+                    title={activeCase.status === "AWAITING_APPROVAL" ? "Awaiting Approval" : "Case Closed"}
+                    time="T+3.5s"
+                    desc={`NBA: ${activeCase.recommended_action}. ${activeCase.explanation}`}
+                    status={activeCase.status === "AWAITING_APPROVAL" ? "active" : "done"}
+                    pulse={activeCase.status === "AWAITING_APPROVAL"}
+                  />
+                </>
+              )}
+            </div>
+          ) : (
+             <div className="p-6 flex-1 flex items-center justify-center text-slate-500 text-sm">
+               No case selected.
+             </div>
+          )}
           
-          <div className="p-4 border-t border-slate-800/50 bg-slate-900/30">
-            <button className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition hover:-translate-y-0.5">
-              Approve Block Action
-            </button>
-          </div>
+          {activeCase && activeCase.status === 'AWAITING_APPROVAL' && (
+            <div className="p-4 border-t border-slate-800/50 bg-slate-900/30">
+              <button className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition hover:-translate-y-0.5">
+                Approve {activeCase.recommended_action}
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
@@ -182,7 +260,7 @@ function MetricCard({ title, value, trend, icon, accent }: any) {
         <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-700/50">
           {icon}
         </div>
-        <span className={`text-xs font-semibold px-2 py-1 rounded-md bg-slate-900/80 border border-slate-700/50 ${trend.startsWith('+') || trend === 'Stable' ? 'text-emerald-400' : 'text-rose-400'}`}>
+        <span className={`text-xs font-semibold px-2 py-1 rounded-md bg-slate-900/80 border border-slate-700/50 ${trend.startsWith('+') || trend === 'Stable' || trend === 'Live' || trend === 'Session' || trend === 'Tracked' ? 'text-emerald-400' : 'text-rose-400'}`}>
           {trend}
         </span>
       </div>
@@ -195,9 +273,9 @@ function MetricCard({ title, value, trend, icon, accent }: any) {
   )
 }
 
-function CaseRow({ id, entity, trigger, score, state, action, active, resolved }: any) {
+function CaseRow({ id, entity, trigger, score, state, action, active, resolved, onClick }: any) {
   return (
-    <tr className={`group cursor-pointer transition-colors ${active ? 'bg-blue-500/5' : 'hover:bg-slate-800/30'}`}>
+    <tr onClick={onClick} className={`group cursor-pointer transition-colors ${active ? 'bg-blue-500/10' : 'hover:bg-slate-800/30'}`}>
       <td className="p-5">
         <span className="font-mono text-sm text-slate-300 font-medium group-hover:text-blue-400 transition">{id}</span>
       </td>
