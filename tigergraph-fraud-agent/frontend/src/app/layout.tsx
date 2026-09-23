@@ -2,7 +2,7 @@
 
 import { Outfit } from "next/font/google";
 import "./globals.css";
-import { ShieldAlert, LayoutDashboard, Activity, FileText, Settings, ShieldCheck } from "lucide-react";
+import { ShieldAlert, LayoutDashboard, Activity, FileText, Settings, Fingerprint } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -15,86 +15,71 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
   return (
-    <html lang="en" className="dark">
-      <body className={`${outfit.className} antialiased text-slate-200 min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-950 via-gray-900 to-black`}>
-        <div className="flex h-screen overflow-hidden relative">
+    <html lang="en" className="light">
+      <body className={`${outfit.className} antialiased text-slate-900 min-h-screen bg-slate-50`}>
+        <div className="flex flex-col min-h-screen">
           
-          {/* Ambient Glow */}
-          <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-fuchsia-600/10 rounded-full blur-[120px] pointer-events-none mix-blend-screen" />
-          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[100px] pointer-events-none mix-blend-screen" />
-          
-          {/* Sleek Sidebar */}
-          <aside className="w-72 glass-panel flex flex-col border-r border-slate-800/50 z-10 relative">
-            
-            {/* Logo Area */}
-            <div className="p-6 flex items-center gap-3 border-b border-slate-800/50">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <ShieldCheck className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">
-                  TigerGraph
-                </h1>
-                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Fraud Ops Agent</p>
+          {/* Top Navigation Bar */}
+          <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between items-center h-16">
+                
+                {/* Logo Area */}
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-indigo-600 rounded-lg text-white">
+                    <Fingerprint size={24} />
+                  </div>
+                  <div>
+                    <h1 className="font-bold text-lg leading-tight text-slate-900">TigerGraph</h1>
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Fraud Ops Agent</p>
+                  </div>
+                </div>
+
+                {/* Main Nav */}
+                <nav className="hidden md:flex gap-1">
+                  <TopNavItem href="/" icon={<LayoutDashboard size={18} />} label="Dashboard" active={pathname === "/"} />
+                  <TopNavItem href="/queue" icon={<ShieldAlert size={18} />} label="Queue" badge="3" active={pathname === "/queue"} />
+                  <TopNavItem href="/traces" icon={<Activity size={18} />} label="Traces" active={pathname === "/traces"} />
+                  <TopNavItem href="/policies" icon={<FileText size={18} />} label="Policies" active={pathname === "/policies"} />
+                </nav>
+
+                {/* User Area */}
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full border border-slate-200">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span className="text-xs font-semibold text-slate-600">Auto-Agent Online</span>
+                  </div>
+                  <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                    <Settings size={20} />
+                  </button>
+                </div>
               </div>
             </div>
-
-            {/* Navigation */}
-            <nav className="flex-1 p-4 space-y-2 mt-4">
-              <NavItem href="/" icon={<LayoutDashboard size={20} />} label="Dashboard" active={pathname === "/"} />
-              <NavItem href="/queue" icon={<ShieldAlert size={20} />} label="Case Queue" badge="3" active={pathname === "/queue"} />
-              <NavItem href="/traces" icon={<Activity size={20} />} label="Agent Traces" active={pathname === "/traces"} />
-              <NavItem href="/policies" icon={<FileText size={20} />} label="Graph Policies" active={pathname === "/policies"} />
-            </nav>
-
-            {/* User Area */}
-            <div className="p-4 border-t border-slate-800/50">
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 transition cursor-pointer">
-                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
-                  <span className="text-sm font-semibold">AI</span>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Auto-Agent</p>
-                  <p className="text-xs text-green-400 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                    Online
-                  </p>
-                </div>
-                <Settings size={18} className="text-slate-400" />
-              </div>
-            </div>
-          </aside>
+          </header>
 
           {/* Main Content Area */}
-          <main className="flex-1 overflow-y-auto relative z-0">
-            {/* Background ambient light */}
-            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-900/20 blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-900/10 blur-[120px] pointer-events-none" />
-            
-            <div className="p-8 max-w-7xl mx-auto relative z-10">
-              {children}
-            </div>
+          <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {children}
           </main>
-          
         </div>
       </body>
     </html>
   );
 }
 
-function NavItem({ href, icon, label, active, badge }: { href: string, icon: React.ReactNode, label: string, active?: boolean, badge?: string }) {
+function TopNavItem({ href, icon, label, active, badge }: { href: string, icon: React.ReactNode, label: string, active?: boolean, badge?: string }) {
   return (
-    <Link href={href} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group
+    <Link href={href} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium
       ${active 
-        ? 'bg-fuchsia-500/15 text-fuchsia-400 border border-fuchsia-500/30 shadow-[0_0_15px_rgba(217,70,239,0.1)]' 
-        : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'}`}
+        ? 'bg-slate-100 text-indigo-700' 
+        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
     >
-      <div className={`${active ? 'text-fuchsia-400' : 'text-slate-500 group-hover:text-fuchsia-400'} transition-colors duration-300`}>
+      <div className={`${active ? 'text-indigo-600' : 'text-slate-400'} transition-colors`}>
         {icon}
       </div>
-      <span className="font-medium flex-1">{label}</span>
+      <span>{label}</span>
       {badge && (
-        <span className="px-2 py-0.5 rounded-md bg-fuchsia-500/20 text-fuchsia-400 text-xs font-bold border border-fuchsia-500/30">
+        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 ml-1">
           {badge}
         </span>
       )}

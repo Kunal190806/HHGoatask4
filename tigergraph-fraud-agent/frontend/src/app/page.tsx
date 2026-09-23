@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Activity, ShieldAlert, Cpu, Share2, Search, ArrowUpRight, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Activity, ShieldAlert, Cpu, Share2, Search, AlertTriangle, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 export default function Dashboard() {
   const [cases, setCases] = useState<any[]>([]);
@@ -17,7 +17,7 @@ export default function Dashboard() {
         setCases(data.cases);
       }
     } catch (e) {
-      console.error("Failed to fetch cases", e);
+      console.warn("Backend not reached", e);
     } finally {
       setLoading(false);
     }
@@ -25,14 +25,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchCases();
-    // Poll every 5 seconds for dashboard freshness
     const interval = setInterval(fetchCases, 5000);
     return () => clearInterval(interval);
   }, []);
 
   const simulateNewCase = async () => {
     try {
-      // 1. Create case
       const createRes = await fetch("http://localhost:8000/api/cases", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -40,28 +38,22 @@ export default function Dashboard() {
           trigger_type: "api_request",
           customer_id: "C" + Math.floor(Math.random() * 10000),
           transaction_id: "TXN" + Math.floor(Math.random() * 100000),
-          initial_risk: 0.85 + (Math.random() * 0.15) // High risk
+          initial_risk: 0.85 + (Math.random() * 0.15)
         })
       });
-      if (!createRes.ok) {
-        throw new Error(`Failed to create case: ${await createRes.text()}`);
-      }
+      if (!createRes.ok) throw new Error("Failed");
       const createData = await createRes.json();
       const caseId = createData.case.case_id;
 
-      await fetchCases(); // Refresh to show OPEN state
+      await fetchCases();
 
-      // 2. Trigger Investigation
       await fetch(`http://localhost:8000/api/cases/${caseId}/investigate`, {
         method: "POST"
       });
-
-      await fetchCases(); // Refresh to show completed state
+      await fetchCases();
 
     } catch (e) {
       console.warn("Backend unavailable, simulating locally for demo...", e);
-      
-      // Fallback Demo Mode for Hackathon
       const mockCaseId = "HHG-" + Math.floor(Math.random() * 1000);
       const newMockCase = {
         case_id: mockCaseId,
@@ -71,25 +63,23 @@ export default function Dashboard() {
         status: "OPEN",
         recommended_action: null,
       };
-      
       setCases(prev => [...prev, newMockCase]);
       setActiveCase(newMockCase);
       
-      // Simulate processing delay
       setTimeout(() => {
         setCases(prev => prev.map(c => c.case_id === mockCaseId ? {
           ...c,
           status: "AWAITING_APPROVAL",
           recommended_action: "BLOCK_CARD",
           confidence_level: "HIGH_CONFIDENCE",
-          explanation: "Automated step-up failed. Device graph confirms historical fraud ring linkage."
+          explanation: "Automated step-up failed. Graph reveals strong historical fraud ring linkage."
         } : c));
         setActiveCase((prev: any) => ({
           ...prev,
           status: "AWAITING_APPROVAL",
           recommended_action: "BLOCK_CARD",
           confidence_level: "HIGH_CONFIDENCE",
-          explanation: "Automated step-up failed. Device graph confirms historical fraud ring linkage."
+          explanation: "Automated step-up failed. Graph reveals strong historical fraud ring linkage."
         }));
       }, 3500);
     }
@@ -97,16 +87,12 @@ export default function Dashboard() {
 
   const handleApprove = () => {
     if (!activeCase) return;
-    
-    // Optimistic UI update for demo
     setCases(prev => prev.map(c => 
       c.case_id === activeCase.case_id 
         ? { ...c, status: "CLOSED", final_decision: "APPROVED_ACTION" } 
         : c
     ));
     setActiveCase({ ...activeCase, status: "CLOSED", final_decision: "APPROVED_ACTION" });
-    
-    // Try hitting backend if it's alive, but don't crash if on Vercel fallback
     fetch(`http://localhost:8000/api/cases/${activeCase.case_id}/approve`, {
       method: "POST"
     }).catch(e => console.warn("Backend not reached for approval", e));
@@ -122,99 +108,69 @@ export default function Dashboard() {
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       
       {/* Header */}
-      <header className="mb-10 flex justify-between items-end relative z-10">
+      <header className="mb-8 flex justify-between items-end">
         <div>
-          <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-400 to-cyan-400">
-            Operations Center
-          </h1>
-          <p className="text-slate-400 mt-2 font-medium">Real-time graph-driven investigations & NBA Engine.</p>
+          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Real-Time Alerts</h2>
+          <p className="text-slate-500 mt-1">Monitor and approve agentic decisions across your network.</p>
         </div>
         <div className="flex gap-4">
-          <button 
-            onClick={simulateNewCase}
-            className="px-5 py-2.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 transition-all text-white font-bold rounded-xl shadow-[0_0_20px_rgba(192,38,211,0.3)] hover:shadow-[0_0_25px_rgba(192,38,211,0.5)] hover:-translate-y-0.5 flex items-center gap-2"
-          >
-            <Activity size={18} /> Trigger Signal
-          </button>
-          <div className="glass-panel px-4 py-2 flex items-center gap-2">
-            <Search size={18} className="text-cyan-400" />
+          <div className="bg-white border border-slate-200 px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm">
+            <Search size={18} className="text-slate-400" />
             <input 
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search Case or Txn..." 
-              className="bg-transparent border-none outline-none text-sm w-48 text-slate-200 placeholder-slate-500"
+              placeholder="Search ID..." 
+              className="bg-transparent border-none outline-none text-sm w-48 text-slate-700 placeholder-slate-400"
             />
           </div>
+          <button 
+            onClick={simulateNewCase}
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 transition-all text-white font-semibold rounded-lg shadow-sm flex items-center gap-2"
+          >
+            <Activity size={18} /> Trigger Signal
+          </button>
         </div>
       </header>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-        <MetricCard 
-          title="Active Investigations" 
-          value={cases.filter(c => c.status === 'OPEN').length.toString()} 
-          trend="Live" 
-          icon={<Activity className="text-fuchsia-400" />} 
-          accent="fuchsia" 
-        />
-        <MetricCard 
-          title="Agent Resolved" 
-          value={cases.filter(c => c.status !== 'OPEN').length.toString()} 
-          trend="Session" 
-          icon={<Cpu className="text-cyan-400" />} 
-          accent="cyan" 
-        />
-        <MetricCard 
-          title="Graph Queries / sec" 
-          value="1.2k" 
-          trend="Stable" 
-          icon={<Share2 className="text-emerald-400" />} 
-          accent="emerald" 
-        />
-        <MetricCard 
-          title="High Risk Alerts" 
-          value={cases.filter(c => c.risk_score > 0.8).length.toString()} 
-          trend="Tracked" 
-          icon={<ShieldAlert className="text-amber-400" />} 
-          accent="amber" 
-        />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <MetricCard title="Active Investigations" value={cases.filter(c => c.status === 'OPEN').length.toString()} trend="Live" accent="indigo" />
+        <MetricCard title="Agent Resolved" value={cases.filter(c => c.status !== 'OPEN').length.toString()} trend="Session" accent="sky" />
+        <MetricCard title="Graph Queries / sec" value="1.2k" trend="Stable" accent="emerald" />
+        <MetricCard title="High Risk Alerts" value={cases.filter(c => c.risk_score > 0.8).length.toString()} trend="Tracked" accent="rose" />
       </div>
       
-      {/* Main Investigation Panel */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         
         {/* Cases Table */}
-        <div className="xl:col-span-2 glass-panel rounded-2xl overflow-hidden flex flex-col">
-          <div className="p-6 border-b border-slate-800/50 flex justify-between items-center bg-slate-900/50">
-            <h2 className="font-semibold text-lg flex items-center gap-2">
-              <AlertTriangle size={18} className="text-amber-400" />
-              Agent Case Queue
-            </h2>
-            <button 
-              onClick={fetchCases}
-              className="text-sm font-medium text-slate-400 hover:text-white transition flex items-center gap-1"
-            >
-              <RefreshCw size={16} /> Refresh
+        <div className="xl:col-span-2 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col h-[600px]">
+          <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+              <ShieldAlert size={18} className="text-indigo-500" />
+              Live Feed
+            </h3>
+            <button onClick={fetchCases} className="text-sm font-medium text-slate-500 hover:text-indigo-600 transition flex items-center gap-1">
+              <RefreshCw size={14} /> Refresh
             </button>
           </div>
           
-          <div className="overflow-x-auto flex-1">
+          <div className="overflow-x-auto overflow-y-auto flex-1">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider bg-slate-900/30">
-                  <th className="p-5 font-medium">Case ID</th>
-                  <th className="p-5 font-medium">Entity / Trigger</th>
-                  <th className="p-5 font-medium">Risk Score</th>
-                  <th className="p-5 font-medium">State</th>
-                  <th className="p-5 font-medium text-right">NBA Recommendation</th>
+                <tr className="border-b border-slate-100 text-slate-500 text-xs font-semibold uppercase tracking-wider bg-slate-50 sticky top-0">
+                  <th className="p-4">Case ID</th>
+                  <th className="p-4">Entity</th>
+                  <th className="p-4">Risk</th>
+                  <th className="p-4">State</th>
+                  <th className="p-4 text-right">NBA</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/50">
+              <tbody className="divide-y divide-slate-100">
                 {filteredCases.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-500">
-                      {searchQuery ? "No cases match your search." : "No active cases. Click 'Trigger Signal' to simulate a fraud alert."}
+                    <td colSpan={5} className="p-10 text-center text-slate-500">
+                      {searchQuery ? "No matches found." : "No active cases."}
                     </td>
                   </tr>
                 )}
@@ -238,14 +194,14 @@ export default function Dashboard() {
         </div>
 
         {/* Live Agent Trace Sidebar */}
-        <div className="glass-panel rounded-2xl overflow-hidden flex flex-col">
-          <div className="p-6 border-b border-slate-800/50 bg-slate-900/50">
-            <h2 className="font-semibold text-lg flex items-center gap-2">
-              <Cpu size={18} className="text-blue-400" />
-              Live Agent Trace
-            </h2>
-            <p className="text-xs text-slate-400 mt-1">
-              {activeCase ? `Tracing execution for ${activeCase.case_id}` : "Select a case to view agent traces"}
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col h-[600px]">
+          <div className="p-5 border-b border-slate-100 bg-slate-50/50">
+            <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+              <Cpu size={18} className="text-indigo-500" />
+              Agent Trace
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              {activeCase ? `Tracing ${activeCase.case_id}` : "Select a case"}
             </p>
           </div>
           
@@ -253,28 +209,17 @@ export default function Dashboard() {
             <div className="p-6 space-y-6 flex-1 overflow-y-auto">
               <TraceStep 
                 title="Alert Received" 
-                time="T+0.0s"
-                desc={`Model flagged TXN ${activeCase.transaction_id} for Customer ${activeCase.customer_id} with initial score ${activeCase.risk_score.toFixed(2)}.`}
+                time="0.0s"
+                desc={`Model flagged TXN ${activeCase.transaction_id} for ${activeCase.customer_id} with score ${activeCase.risk_score.toFixed(2)}.`}
                 status="done"
               />
               {activeCase.status !== 'OPEN' && (
                 <>
+                  <TraceStep title="Graph Traversal" time="1.2s" desc="Agent checked devices and IPs." status="done" isCode />
+                  <TraceStep title="GraphRAG Policies" time="2.4s" desc={`Retrieved logic. Confidence: ${activeCase.confidence_level}`} status="done" />
                   <TraceStep 
-                    title="Graph Tool: execute_gsql" 
-                    time="T+1.2s"
-                    desc="Agent traversed connected devices, IPs, and historical transactions."
-                    status="done"
-                    isCode
-                  />
-                  <TraceStep 
-                    title="GraphRAG: Policy Lookup" 
-                    time="T+2.4s"
-                    desc={`Retrieved policy mappings. Agent assessed Confidence: ${activeCase.confidence_level}`}
-                    status="done"
-                  />
-                  <TraceStep 
-                    title={activeCase.status === "AWAITING_APPROVAL" ? "Awaiting Approval" : "Case Closed"}
-                    time="T+3.5s"
+                    title={activeCase.status === "AWAITING_APPROVAL" ? "Awaiting Review" : "Closed"}
+                    time="3.5s"
                     desc={`NBA: ${activeCase.recommended_action}. ${activeCase.explanation}`}
                     status={activeCase.status === "AWAITING_APPROVAL" ? "active" : "done"}
                     pulse={activeCase.status === "AWAITING_APPROVAL"}
@@ -283,23 +228,22 @@ export default function Dashboard() {
               )}
             </div>
           ) : (
-             <div className="p-6 flex-1 flex items-center justify-center text-slate-500 text-sm">
+             <div className="p-6 flex-1 flex items-center justify-center text-slate-400 text-sm">
                No case selected.
              </div>
           )}
           
           {activeCase && activeCase.status === 'AWAITING_APPROVAL' && (
-            <div className="p-4 border-t border-purple-500/30 bg-purple-900/20">
+            <div className="p-5 border-t border-slate-100 bg-slate-50">
               <button 
                 onClick={handleApprove}
-                className="w-full py-3 rounded-lg bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white font-bold shadow-[0_0_15px_rgba(217,70,239,0.4)] hover:shadow-[0_0_25px_rgba(217,70,239,0.6)] transition hover:-translate-y-0.5"
+                className="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-sm transition"
               >
                 Approve {activeCase.recommended_action}
               </button>
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
@@ -307,65 +251,56 @@ export default function Dashboard() {
 
 // Subcomponents
 
-function MetricCard({ title, value, trend, icon, accent }: any) {
-  const accentColors: any = {
-    fuchsia: 'from-fuchsia-500/20 to-transparent border-fuchsia-500/20',
-    cyan: 'from-cyan-500/20 to-transparent border-cyan-500/20',
-    emerald: 'from-emerald-500/20 to-transparent border-emerald-500/20',
-    amber: 'from-amber-500/20 to-transparent border-amber-500/20',
+function MetricCard({ title, value, trend, accent }: any) {
+  const accents: any = {
+    indigo: 'bg-indigo-50 text-indigo-700',
+    sky: 'bg-sky-50 text-sky-700',
+    emerald: 'bg-emerald-50 text-emerald-700',
+    rose: 'bg-rose-50 text-rose-700',
   };
 
   return (
-    <div className={`glass-card rounded-2xl p-6 bg-gradient-to-br ${accentColors[accent]} relative overflow-hidden group`}>
-      <div className="flex justify-between items-start mb-4 relative z-10">
-        <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-700/50">
-          {icon}
-        </div>
-        <span className={`text-xs font-semibold px-2 py-1 rounded-md bg-slate-900/80 border border-slate-700/50 ${trend.startsWith('+') || trend === 'Stable' || trend === 'Live' || trend === 'Session' || trend === 'Tracked' ? 'text-emerald-400' : 'text-rose-400'}`}>
+    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden group">
+      <div className="flex justify-between items-start mb-2 relative z-10">
+        <h3 className="text-slate-500 text-sm font-medium">{title}</h3>
+        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${accents[accent]}`}>
           {trend}
         </span>
       </div>
-      <div className="relative z-10">
-        <h3 className="text-slate-400 text-sm font-medium">{title}</h3>
-        <p className="text-3xl font-bold mt-1 text-white">{value}</p>
-      </div>
-      <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition duration-500"></div>
+      <p className="text-3xl font-extrabold text-slate-900 relative z-10">{value}</p>
     </div>
   )
 }
 
 function CaseRow({ id, entity, trigger, score, state, action, active, resolved, onClick }: any) {
   return (
-    <tr onClick={onClick} className={`group cursor-pointer transition-colors ${active ? 'bg-fuchsia-500/10' : 'hover:bg-white/5'}`}>
-      <td className="p-5">
-        <span className="font-mono text-sm text-slate-300 font-bold group-hover:text-fuchsia-300 transition">{id}</span>
+    <tr onClick={onClick} className={`cursor-pointer transition-colors ${active ? 'bg-indigo-50/50' : 'hover:bg-slate-50'}`}>
+      <td className="p-4">
+        <span className={`font-mono text-sm font-semibold ${active ? 'text-indigo-700' : 'text-slate-700'}`}>{id}</span>
       </td>
-      <td className="p-5">
-        <p className="text-sm font-medium text-slate-200">{entity}</p>
+      <td className="p-4">
+        <p className="text-sm font-semibold text-slate-800">{entity}</p>
         <p className="text-xs text-slate-500">{trigger}</p>
       </td>
-      <td className="p-5">
+      <td className="p-4">
         <div className="flex items-center gap-2">
-          <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-            <div 
-              className={`h-full rounded-full ${score > 0.8 ? 'bg-rose-500' : score > 0.5 ? 'bg-amber-500' : 'bg-emerald-500'}`} 
-              style={{ width: `${score * 100}%` }} 
-            />
+          <div className="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+            <div className={`h-full rounded-full ${score > 0.8 ? 'bg-rose-500' : score > 0.5 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${score * 100}%` }} />
           </div>
-          <span className="text-xs font-bold text-slate-300">{score.toFixed(2)}</span>
+          <span className="text-xs font-bold text-slate-600">{score.toFixed(2)}</span>
         </div>
       </td>
-      <td className="p-5">
-        <span className={`px-2.5 py-1 text-[11px] font-bold tracking-wider rounded-md border ${
-          resolved ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' :
-          state === 'AWAITING_APPROVAL' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 
-          'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30'
+      <td className="p-4">
+        <span className={`px-2 py-1 text-[10px] uppercase font-bold rounded-md ${
+          resolved ? 'bg-emerald-100 text-emerald-700' :
+          state === 'AWAITING_APPROVAL' ? 'bg-amber-100 text-amber-700' : 
+          'bg-indigo-100 text-indigo-700'
         }`}>
           {state}
         </span>
       </td>
-      <td className="p-5 text-right">
-        <span className="text-sm font-semibold text-slate-200">{action}</span>
+      <td className="p-4 text-right">
+        <span className="text-xs font-bold text-slate-700">{action}</span>
       </td>
     </tr>
   )
@@ -373,22 +308,22 @@ function CaseRow({ id, entity, trigger, score, state, action, active, resolved, 
 
 function TraceStep({ title, time, desc, status, isCode, pulse }: any) {
   return (
-    <div className="relative pl-6 pb-2 border-l-2 border-fuchsia-900/50 last:border-0 last:pb-0">
-      <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 border-[#111827] ${
-        status === 'done' ? 'bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]' : 'bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.8)]'
+    <div className="relative pl-6 pb-4 border-l-2 border-slate-200 last:border-0 last:pb-0">
+      <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-white ${
+        status === 'done' ? 'bg-emerald-500' : 'bg-indigo-500'
       } ${pulse ? 'animate-pulse' : ''}`} />
       
       <div className="flex justify-between items-start mb-1">
-        <h4 className="text-sm font-bold text-slate-200">{title}</h4>
-        <span className="text-[10px] text-slate-500 font-mono">{time}</span>
+        <h4 className="text-sm font-bold text-slate-800">{title}</h4>
+        <span className="text-[10px] text-slate-400 font-mono font-medium">{time}</span>
       </div>
       
       {isCode ? (
-        <div className="mt-2 bg-slate-950 rounded-lg p-3 border border-slate-800">
-          <code className="text-xs text-emerald-400 font-mono">{desc}</code>
+        <div className="mt-2 bg-slate-50 rounded-md p-2 border border-slate-200">
+          <code className="text-[11px] text-indigo-600 font-mono font-medium">{desc}</code>
         </div>
       ) : (
-        <p className="text-xs text-slate-400 leading-relaxed">{desc}</p>
+        <p className="text-xs text-slate-500 leading-relaxed">{desc}</p>
       )}
     </div>
   )
