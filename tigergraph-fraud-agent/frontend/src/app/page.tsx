@@ -7,6 +7,7 @@ export default function Dashboard() {
   const [cases, setCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCase, setActiveCase] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchCases = async () => {
     try {
@@ -94,6 +95,29 @@ export default function Dashboard() {
     }
   };
 
+  const handleApprove = () => {
+    if (!activeCase) return;
+    
+    // Optimistic UI update for demo
+    setCases(prev => prev.map(c => 
+      c.case_id === activeCase.case_id 
+        ? { ...c, status: "CLOSED", final_decision: "APPROVED_ACTION" } 
+        : c
+    ));
+    setActiveCase({ ...activeCase, status: "CLOSED", final_decision: "APPROVED_ACTION" });
+    
+    // Try hitting backend if it's alive, but don't crash if on Vercel fallback
+    fetch(`http://localhost:8000/api/cases/${activeCase.case_id}/approve`, {
+      method: "POST"
+    }).catch(e => console.warn("Backend not reached for approval", e));
+  };
+
+  const filteredCases = cases.filter(c => 
+    c.case_id.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    c.customer_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (c.transaction_id && c.transaction_id.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       
@@ -116,6 +140,8 @@ export default function Dashboard() {
             <Search size={18} className="text-slate-400" />
             <input 
               type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search Case or Txn..." 
               className="bg-transparent border-none outline-none text-sm w-48 text-slate-200 placeholder-slate-500"
             />
@@ -185,14 +211,14 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/50">
-                {cases.length === 0 && (
+                {filteredCases.length === 0 && (
                   <tr>
                     <td colSpan={5} className="p-8 text-center text-slate-500">
-                      No active cases. Click "Trigger Signal" to simulate a fraud alert.
+                      {searchQuery ? "No cases match your search." : "No active cases. Click 'Trigger Signal' to simulate a fraud alert."}
                     </td>
                   </tr>
                 )}
-                {cases.slice().reverse().map(c => (
+                {filteredCases.slice().reverse().map(c => (
                   <CaseRow 
                     key={c.case_id}
                     id={c.case_id} 
@@ -264,7 +290,10 @@ export default function Dashboard() {
           
           {activeCase && activeCase.status === 'AWAITING_APPROVAL' && (
             <div className="p-4 border-t border-slate-800/50 bg-slate-900/30">
-              <button className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition hover:-translate-y-0.5">
+              <button 
+                onClick={handleApprove}
+                className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition hover:-translate-y-0.5"
+              >
                 Approve {activeCase.recommended_action}
               </button>
             </div>
