@@ -122,9 +122,9 @@ export default function Dashboard() {
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       
       {/* Header */}
-      <header className="mb-10 flex justify-between items-end">
+      <header className="mb-10 flex justify-between items-end relative z-10">
         <div>
-          <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+          <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-400 to-cyan-400">
             Operations Center
           </h1>
           <p className="text-slate-400 mt-2 font-medium">Real-time graph-driven investigations & NBA Engine.</p>
@@ -132,12 +132,12 @@ export default function Dashboard() {
         <div className="flex gap-4">
           <button 
             onClick={simulateNewCase}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 transition text-white font-semibold rounded-lg shadow-lg flex items-center gap-2"
+            className="px-5 py-2.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 transition-all text-white font-bold rounded-xl shadow-[0_0_20px_rgba(192,38,211,0.3)] hover:shadow-[0_0_25px_rgba(192,38,211,0.5)] hover:-translate-y-0.5 flex items-center gap-2"
           >
             <Activity size={18} /> Trigger Signal
           </button>
-          <div className="glass-panel px-4 py-2 rounded-lg flex items-center gap-2">
-            <Search size={18} className="text-slate-400" />
+          <div className="glass-panel px-4 py-2 flex items-center gap-2">
+            <Search size={18} className="text-cyan-400" />
             <input 
               type="text" 
               value={searchQuery}
@@ -155,15 +155,15 @@ export default function Dashboard() {
           title="Active Investigations" 
           value={cases.filter(c => c.status === 'OPEN').length.toString()} 
           trend="Live" 
-          icon={<Activity className="text-blue-400" />} 
-          accent="blue" 
+          icon={<Activity className="text-fuchsia-400" />} 
+          accent="fuchsia" 
         />
         <MetricCard 
           title="Agent Resolved" 
           value={cases.filter(c => c.status !== 'OPEN').length.toString()} 
           trend="Session" 
-          icon={<Cpu className="text-indigo-400" />} 
-          accent="indigo" 
+          icon={<Cpu className="text-cyan-400" />} 
+          accent="cyan" 
         />
         <MetricCard 
           title="Graph Queries / sec" 
@@ -176,8 +176,8 @@ export default function Dashboard() {
           title="High Risk Alerts" 
           value={cases.filter(c => c.risk_score > 0.8).length.toString()} 
           trend="Tracked" 
-          icon={<ShieldAlert className="text-rose-400" />} 
-          accent="rose" 
+          icon={<ShieldAlert className="text-amber-400" />} 
+          accent="amber" 
         />
       </div>
       
@@ -289,10 +289,10 @@ export default function Dashboard() {
           )}
           
           {activeCase && activeCase.status === 'AWAITING_APPROVAL' && (
-            <div className="p-4 border-t border-slate-800/50 bg-slate-900/30">
+            <div className="p-4 border-t border-purple-500/30 bg-purple-900/20">
               <button 
                 onClick={handleApprove}
-                className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition hover:-translate-y-0.5"
+                className="w-full py-3 rounded-lg bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white font-bold shadow-[0_0_15px_rgba(217,70,239,0.4)] hover:shadow-[0_0_25px_rgba(217,70,239,0.6)] transition hover:-translate-y-0.5"
               >
                 Approve {activeCase.recommended_action}
               </button>
@@ -309,10 +309,10 @@ export default function Dashboard() {
 
 function MetricCard({ title, value, trend, icon, accent }: any) {
   const accentColors: any = {
-    blue: 'from-blue-500/20 to-transparent border-blue-500/20',
-    indigo: 'from-indigo-500/20 to-transparent border-indigo-500/20',
+    fuchsia: 'from-fuchsia-500/20 to-transparent border-fuchsia-500/20',
+    cyan: 'from-cyan-500/20 to-transparent border-cyan-500/20',
     emerald: 'from-emerald-500/20 to-transparent border-emerald-500/20',
-    rose: 'from-rose-500/20 to-transparent border-rose-500/20',
+    amber: 'from-amber-500/20 to-transparent border-amber-500/20',
   };
 
   return (
@@ -336,9 +336,9 @@ function MetricCard({ title, value, trend, icon, accent }: any) {
 
 function CaseRow({ id, entity, trigger, score, state, action, active, resolved, onClick }: any) {
   return (
-    <tr onClick={onClick} className={`group cursor-pointer transition-colors ${active ? 'bg-blue-500/10' : 'hover:bg-slate-800/30'}`}>
+    <tr onClick={onClick} className={`group cursor-pointer transition-colors ${active ? 'bg-fuchsia-500/10' : 'hover:bg-white/5'}`}>
       <td className="p-5">
-        <span className="font-mono text-sm text-slate-300 font-medium group-hover:text-blue-400 transition">{id}</span>
+        <span className="font-mono text-sm text-slate-300 font-bold group-hover:text-fuchsia-300 transition">{id}</span>
       </td>
       <td className="p-5">
         <p className="text-sm font-medium text-slate-200">{entity}</p>
@@ -356,10 +356,10 @@ function CaseRow({ id, entity, trigger, score, state, action, active, resolved, 
         </div>
       </td>
       <td className="p-5">
-        <span className={`px-2.5 py-1 text-xs font-bold rounded-md border ${
-          resolved ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-          state === 'AWAITING_APPROVAL' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 
-          'bg-blue-500/10 text-blue-400 border-blue-500/20'
+        <span className={`px-2.5 py-1 text-[11px] font-bold tracking-wider rounded-md border ${
+          resolved ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' :
+          state === 'AWAITING_APPROVAL' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 
+          'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30'
         }`}>
           {state}
         </span>
@@ -373,9 +373,9 @@ function CaseRow({ id, entity, trigger, score, state, action, active, resolved, 
 
 function TraceStep({ title, time, desc, status, isCode, pulse }: any) {
   return (
-    <div className="relative pl-6 pb-2 border-l-2 border-slate-700/50 last:border-0 last:pb-0">
-      <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 border-slate-900 ${
-        status === 'done' ? 'bg-emerald-500' : 'bg-blue-500'
+    <div className="relative pl-6 pb-2 border-l-2 border-fuchsia-900/50 last:border-0 last:pb-0">
+      <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 border-[#111827] ${
+        status === 'done' ? 'bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]' : 'bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.8)]'
       } ${pulse ? 'animate-pulse' : ''}`} />
       
       <div className="flex justify-between items-start mb-1">

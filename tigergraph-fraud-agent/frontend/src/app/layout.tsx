@@ -16,8 +16,12 @@ export default function RootLayout({
   const pathname = usePathname();
   return (
     <html lang="en" className="dark">
-      <body className={`${outfit.className} antialiased text-slate-200 min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black`}>
-        <div className="flex h-screen overflow-hidden">
+      <body className={`${outfit.className} antialiased text-slate-200 min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-950 via-gray-900 to-black`}>
+        <div className="flex h-screen overflow-hidden relative">
+          
+          {/* Ambient Glow */}
+          <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-fuchsia-600/10 rounded-full blur-[120px] pointer-events-none mix-blend-screen" />
+          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[100px] pointer-events-none mix-blend-screen" />
           
           {/* Sleek Sidebar */}
           <aside className="w-72 glass-panel flex flex-col border-r border-slate-800/50 z-10 relative">
@@ -82,15 +86,15 @@ function NavItem({ href, icon, label, active, badge }: { href: string, icon: Rea
   return (
     <Link href={href} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group
       ${active 
-        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' 
-        : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}`}
+        ? 'bg-fuchsia-500/15 text-fuchsia-400 border border-fuchsia-500/30 shadow-[0_0_15px_rgba(217,70,239,0.1)]' 
+        : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'}`}
     >
-      <div className={`${active ? 'text-blue-400' : 'text-slate-500 group-hover:text-blue-400'} transition-colors duration-300`}>
+      <div className={`${active ? 'text-fuchsia-400' : 'text-slate-500 group-hover:text-fuchsia-400'} transition-colors duration-300`}>
         {icon}
       </div>
       <span className="font-medium flex-1">{label}</span>
       {badge && (
-        <span className="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-400 text-xs font-bold border border-blue-500/20">
+        <span className="px-2 py-0.5 rounded-md bg-fuchsia-500/20 text-fuchsia-400 text-xs font-bold border border-fuchsia-500/30">
           {badge}
         </span>
       )}
