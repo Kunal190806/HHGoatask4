@@ -1,0 +1,25 @@
+{
+  "case_id": "CC-0007",
+  "case": {
+    "status": "closed",
+    "verdict": "fraud",
+    "fraud_probability": 0.95,
+    "pattern": "undocumented",
+    "affected_txn_ids": [
+      "3000001"
+    ],
+    "exposure_usd": 150.0,
+    "summary": "High risk score combined with historical graph matches indicates probable fraud."
+  },
+  "next_best_actions": {
+    "initial": [],
+    "final": [
+      {
+        "action": "BLOCK_ACCOUNT",
+        "route": "auto",
+        "reason": "Evaluated by Agent"
+      }
+    ],
+    "what_changed": "Evaluated through automated benchmark"
+  }
+}
