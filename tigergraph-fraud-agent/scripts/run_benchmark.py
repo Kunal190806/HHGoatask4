@@ -58,24 +58,24 @@ async def evaluate_benchmark(case_pack_path: str, api_url: str):
                 results.append(answer)
                 
                 # Save individual case file
-                with open(f"../benchmark/{case_id}.json", "w") as f:
+                with open(f"../cases/{case_id}.json", "w") as f:
                     json.dump(answer, f, indent=2)
                     
             except Exception as e:
                 print(f"Failed to process {case_id}: {e}")
                 
     # Save aggregate report
-    with open("../benchmark/results.json", "w") as f:
+    with open("../cases/results.json", "w") as f:
         json.dump({"run_date": str(datetime.utcnow()), "total_evaluated": len(results), "results": results}, f, indent=2)
         
-    print(f"Benchmark complete. Processed {len(results)} cases. Results written to ../benchmark/")
+    print(f"Benchmark complete. Processed {len(results)} cases. Results written to ../cases/")
 
 if __name__ == "__main__":
     case_pack = os.environ.get("CASE_PACK_PATH", "../HHGOA_IEEE/case_pack.csv")
     api_url = os.environ.get("API_URL", "http://localhost:8000")
     
-    # Ensure benchmark output dir exists
-    os.makedirs("../benchmark", exist_ok=True)
+    # Ensure cases output dir exists
+    os.makedirs("../cases", exist_ok=True)
     
     if not os.path.exists(case_pack):
         print(f"Error: {case_pack} not found.")
