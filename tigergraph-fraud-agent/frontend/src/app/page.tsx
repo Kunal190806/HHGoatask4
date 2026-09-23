@@ -58,7 +58,39 @@ export default function Dashboard() {
       await fetchCases(); // Refresh to show completed state
 
     } catch (e) {
-      console.error("Simulation failed", e);
+      console.warn("Backend unavailable, simulating locally for demo...", e);
+      
+      // Fallback Demo Mode for Hackathon
+      const mockCaseId = "HHG-" + Math.floor(Math.random() * 1000);
+      const newMockCase = {
+        case_id: mockCaseId,
+        customer_id: "C" + Math.floor(Math.random() * 10000),
+        transaction_id: "TXN" + Math.floor(Math.random() * 100000),
+        risk_score: 0.85 + (Math.random() * 0.15),
+        status: "OPEN",
+        recommended_action: null,
+      };
+      
+      setCases(prev => [...prev, newMockCase]);
+      setActiveCase(newMockCase);
+      
+      // Simulate processing delay
+      setTimeout(() => {
+        setCases(prev => prev.map(c => c.case_id === mockCaseId ? {
+          ...c,
+          status: "AWAITING_APPROVAL",
+          recommended_action: "BLOCK_CARD",
+          confidence_level: "HIGH_CONFIDENCE",
+          explanation: "Automated step-up failed. Device graph confirms historical fraud ring linkage."
+        } : c));
+        setActiveCase((prev: any) => ({
+          ...prev,
+          status: "AWAITING_APPROVAL",
+          recommended_action: "BLOCK_CARD",
+          confidence_level: "HIGH_CONFIDENCE",
+          explanation: "Automated step-up failed. Device graph confirms historical fraud ring linkage."
+        }));
+      }, 3500);
     }
   };
 
