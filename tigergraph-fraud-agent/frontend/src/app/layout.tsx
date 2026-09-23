@@ -1,20 +1,19 @@
-import type { Metadata } from "next";
+"use client";
+
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { ShieldAlert, LayoutDashboard, Activity, FileText, Settings, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const outfit = Outfit({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "TigerGraph Agentic Fraud Ops",
-  description: "Next-generation fraud investigation powered by TigerGraph and LLMs",
-};
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
   return (
     <html lang="en" className="dark">
       <body className={`${outfit.className} antialiased text-slate-200 min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black`}>
@@ -38,10 +37,10 @@ export default function RootLayout({
 
             {/* Navigation */}
             <nav className="flex-1 p-4 space-y-2 mt-4">
-              <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" active />
-              <NavItem icon={<ShieldAlert size={20} />} label="Case Queue" badge="3" />
-              <NavItem icon={<Activity size={20} />} label="Agent Traces" />
-              <NavItem icon={<FileText size={20} />} label="Graph Policies" />
+              <NavItem href="/" icon={<LayoutDashboard size={20} />} label="Dashboard" active={pathname === "/"} />
+              <NavItem href="/queue" icon={<ShieldAlert size={20} />} label="Case Queue" badge="3" active={pathname === "/queue"} />
+              <NavItem href="/traces" icon={<Activity size={20} />} label="Agent Traces" active={pathname === "/traces"} />
+              <NavItem href="/policies" icon={<FileText size={20} />} label="Graph Policies" active={pathname === "/policies"} />
             </nav>
 
             {/* User Area */}
@@ -79,9 +78,9 @@ export default function RootLayout({
   );
 }
 
-function NavItem({ icon, label, active, badge }: { icon: React.ReactNode, label: string, active?: boolean, badge?: string }) {
+function NavItem({ href, icon, label, active, badge }: { href: string, icon: React.ReactNode, label: string, active?: boolean, badge?: string }) {
   return (
-    <a href="#" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group
+    <Link href={href} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group
       ${active 
         ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' 
         : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}`}
@@ -95,6 +94,6 @@ function NavItem({ icon, label, active, badge }: { icon: React.ReactNode, label:
           {badge}
         </span>
       )}
-    </a>
+    </Link>
   )
 }
