@@ -61,3 +61,7 @@ async def get_case(case_id: str):
     if case_id not in cases_db:
         raise HTTPException(status_code=404, detail="Case not found")
     return CaseResponse(case=cases_db[case_id])
+
+@router.get("/cases", response_model=Dict[str, List[Case]])
+async def get_all_cases():
+    return {"cases": list(cases_db.values())}

@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -20,6 +21,14 @@ app = FastAPI(
     title="TigerGraph Fraud Agent API",
     description="API for the Agentic Fraud Investigation System",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(cases_router, prefix="/api")
